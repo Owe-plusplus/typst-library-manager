@@ -1,3 +1,0 @@
-[submodule "include/typst-lib-manager/CLI11"]
-	path = include/typst-lib-manager/CLI11
-	url = https://github.com/CLIUtils/CLI11.git
