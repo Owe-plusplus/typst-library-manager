@@ -1,6 +1,5 @@
-
-#include "CLI/CLI.hpp"
-#include <iostream>
+#include "CLI/CLI11.hpp"
+#include "cmd/config.hpp"
 #include <optional>
 #include <string>
 #include <unistd.h>
@@ -14,6 +13,7 @@ bool add_project(std::string project_name, std::optional<std::string> file_name,
 int main(int argc, char *argv[]) {
   std::string config_path =
       std::string(getenv("HOME")) + "/.typst_library_manager/config.json";
+  cmd::Config config(config_path);
   CLI::App app{"Typst Manager"};
 
   CLI::App *init_cmd =

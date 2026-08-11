@@ -1,4 +1,0 @@
-CompileFlags:
-  Add:
-    - "-I../include/typst-lib-manager/CLI11/include"
-    - "-I../include"
