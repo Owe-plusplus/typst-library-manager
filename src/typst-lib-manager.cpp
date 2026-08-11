@@ -13,9 +13,14 @@ bool add_project(std::string project_name, std::optional<std::string> file_name,
 int main(int argc, char *argv[]) {
   std::string config_path =
       std::string(getenv("HOME")) + "/.typst_library_manager/config.json";
-  cmd::Config config(config_path);
-  CLI::App app{"Typst Manager"};
+  cmd::Config config = cmd::Config(config_path);
+  if (!config.readConfigFile() || !config.readConfigFile()) {
+    exit(EXIT_FAILURE);
+  }
+  std::vector<cmd::Config::ConfigData> config_datas;
+  config_datas = config.config_datas;
 
+  CLI::App app{"Typst Manager"};
   CLI::App *init_cmd =
       app.add_subcommand("init", "Initialize a new Typst project");
   init_cmd->callback([&]() { workspaceInit(config_path); });
