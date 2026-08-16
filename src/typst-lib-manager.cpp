@@ -1,10 +1,10 @@
 #include "CLI/CLI11.hpp"
-#include "cmd/config.hpp"
+#include "subCommands/config.hpp"
+#include "subCommands/init.hpp"
 #include <optional>
 #include <string>
 #include <unistd.h>
 
-bool workspaceInit(std::string config_path) { return true; }
 bool add_project(std::string project_name, std::optional<std::string> file_name,
                  std::optional<std::string> lib_name) {
   return true;
@@ -13,28 +13,37 @@ bool add_project(std::string project_name, std::optional<std::string> file_name,
 int main(int argc, char *argv[]) {
   std::string config_path =
       std::string(getenv("HOME")) + "/.typst_library_manager/config.json";
-  cmd::Config config = cmd::Config(config_path);
-  if (!config.readConfigFile() || !config.readConfigFile()) {
+  subCommands::Config config = subCommands::Config(config_path);
+  if (!config.createConfigFile() || !config.readConfigFile()) {
     exit(EXIT_FAILURE);
   }
-  std::vector<cmd::Config::ConfigData> config_datas;
+  std::vector<subCommands::Config::ConfigData> config_datas;
   config_datas = config.config_datas;
+  subCommands::Init init = subCommands::Init(config);
 
   CLI::App app{"Typst Manager"};
-  CLI::App *init_cmd =
+  CLI::App *init_subCommands =
       app.add_subcommand("init", "Initialize a new Typst project");
-  init_cmd->callback([&]() { workspaceInit(config_path); });
+  init_subCommands->callback([&]() {
+    if (!init.workspaceInit())
+      exit(EXIT_FAILURE);
+  });
 
   std::string project_name;
   std::optional<std::string> filename;
   std::optional<std::string> libname;
-  CLI::App *add_cmd = app.add_subcommand("add", "Add a new Typst project");
-  add_cmd
+  CLI::App *add_subCommands =
+      app.add_subcommand("add", "Add a new Typst project");
+  add_subCommands
       ->add_option("project_name", project_name, "Name of the project to add")
       ->required();
-  auto filename_opt = add_cmd->add_option("-n,--filename", filename,
-                                          "Name of the Typst file to create");
-  auto libname_opt = add_cmd->add_option("-l,--library", libname,
-                                         "Name of the Typst library to use");
-  add_cmd->callback([&]() { add_project(project_name, filename, libname); });
+  auto filename_opt = add_subCommands->add_option(
+      "-n,--filename", filename, "Name of the Typst file to create");
+  auto libname_opt = add_subCommands->add_option(
+      "-l,--library", libname, "Name of the Typst library to use");
+  add_subCommands->callback(
+      [&]() { add_project(project_name, filename, libname); });
+
+  CLI11_PARSE(app, argc, argv);
+  return 0;
 }

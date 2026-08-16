@@ -5,23 +5,20 @@
 #include <iostream>
 #include <string>
 #include <vector>
-namespace cmd {
+namespace subCommands {
 
 class Config {
   std::filesystem::path config_path;
-  std::ofstream config_file;
 
 public:
   struct ConfigData {
     std::string name;
     std::string url;
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(ConfigData, name, url)
   };
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(ConfigData, name, url);
   std::vector<ConfigData> config_datas;
 
-  Config(std::string config_path_str) : config_path(config_path_str) {
-    createConfigFile();
-  }
+  Config(const std::string &config_path_str) : config_path(config_path_str) {}
   ~Config() {}
 
   bool readConfigFile() {
@@ -44,8 +41,11 @@ public:
 
     try {
       config_datas = config_json.get<std::vector<ConfigData>>();
-    } catch (const nlohmann::json::type_error &e) {
+    } catch (const nlohmann::json::exception &e) {
       std::cerr << "Config file has invalid format: " << e.what() << std::endl;
+      return false;
+    } catch (const std::exception &e) {
+      std::cerr << "Unexpected error:  " << e.what() << std::endl;
       return false;
     }
     // Process the JSON data as needed
@@ -59,13 +59,16 @@ public:
     if (config_path.has_parent_path()) {
       std::filesystem::create_directories(config_path.parent_path());
     }
+    std::ofstream config_file;
     config_file.open(config_path);
     if (!config_file.is_open()) {
       std::cerr << "Failed to create config file: " << config_path << std::endl;
       return false;
     }
+    config_file << "[]";
+    config_file.close();
     std::cout << "Config file created at: " << config_path << std::endl;
     return true;
   }
 };
-}; // namespace cmd
+}; // namespace subCommands
