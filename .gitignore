@@ -1,0 +1,41 @@
+# ビルド成果物・一時フォルダ（一番重要）
+build/
+bin/
+lib/
+
+# CMakeの生成物
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CPackConfig.cmake
+CPackSourceConfig.cmake
+
+# CPackで生成されたパッケージ（.deb, .tar.gz, .exe など）
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+*.msi
+*.exe
+_CPack_Packages/
+
+# エディタ・IDEのキャッシュ（VS Code, CLion, Visual Studio）
+.vscode/!tasks.json
+.vscode/!launch.json
+.idea/
+.vs/
+*.user
+
+# コンパイル・言語固有のファイル
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dll
+compile_commands.json
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
