@@ -18,7 +18,15 @@ public:
   };
   std::vector<ConfigData> config_datas;
 
-  Config(const std::string &config_path_str) : config_path(config_path_str) {}
+  Config() {
+    const char *home_dir = getenv("HOME");
+    if (home_dir == nullptr) {
+      std::cerr << "Error: HOME environment variable is not set." << std::endl;
+      exit(EXIT_FAILURE);
+    }
+    std::filesystem::path home_path(home_dir);
+    config_path = home_path / ".typst_library_manager" / "config.json";
+  }
   ~Config() {}
 
   bool readConfigFile() {
@@ -57,7 +65,12 @@ public:
       return true;
     }
     if (config_path.has_parent_path()) {
-      std::filesystem::create_directories(config_path.parent_path());
+      try {
+        std::filesystem::create_directories(config_path.parent_path());
+      } catch (const std::filesystem::filesystem_error &e) {
+        std::cerr << "Error creating directory: " << e.what() << std::endl;
+        return false;
+      }
     }
     std::ofstream config_file;
     config_file.open(config_path);

@@ -1,1 +1,1 @@
--Iinclude/typst-lib-manager
+-Iinclude/typst-library-manager
