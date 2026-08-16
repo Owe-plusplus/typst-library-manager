@@ -54,6 +54,16 @@ int main(int argc, char *argv[]) {
     }
   });
 
+  CLI::App *config_subcommand =
+      app.add_subcommand("config", "Manage Typst library configuration");
+  CLI::App *config_remove_subcommand = config_subcommand->add_subcommand(
+      "remove", "Remove a library configuration");
+  config_remove_subcommand->callback([&]() {
+    if (!config.deleteConfigFile()) {
+      exit(EXIT_FAILURE);
+    }
+  });
+
   CLI11_PARSE(app, argc, argv);
   return 0;
 }

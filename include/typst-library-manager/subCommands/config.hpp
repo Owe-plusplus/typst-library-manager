@@ -83,5 +83,20 @@ public:
     std::cout << "Config file created at: " << config_path << std::endl;
     return true;
   }
+
+  bool deleteConfigFile() {
+    if (!std::filesystem::exists(config_path)) {
+      std::cerr << "Config file does not exist: " << config_path << std::endl;
+      return false;
+    }
+    try {
+      std::filesystem::remove(config_path);
+    } catch (const std::filesystem::filesystem_error &e) {
+      std::cerr << "Error deleting config file: " << e.what() << std::endl;
+      return false;
+    }
+    std::cout << "Config file deleted: " << config_path << std::endl;
+    return true;
+  }
 };
 }; // namespace subCommands
