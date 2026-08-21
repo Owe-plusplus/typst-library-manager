@@ -65,9 +65,13 @@ public:
                    std::optional<std::string> file_name,
                    std::optional<std::string> lib_name) {
     std::string floder_name = project_name;
-    std::string document_name = file_name.value_or("main.typ");
+    std::string document_name = file_name.value_or("main");
     std::string library_name =
         lib_name.value_or(library.library_data[0].config_data.name);
+    std::string ext =
+        document_name.ends_with(".typ") || document_name.ends_with(".typst")
+            ? ""
+            : ".typ";
     std::filesystem::path document_path = std::filesystem::current_path() /
                                           floder_name /
                                           (document_name + ".typ");

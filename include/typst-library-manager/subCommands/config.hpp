@@ -96,6 +96,69 @@ public:
       return false;
     }
     std::cout << "Config file deleted: " << config_path << std::endl;
+
+    try {
+      std::filesystem::remove(config_path.parent_path());
+    } catch (const std::filesystem::filesystem_error &e) {
+      std::cerr << "Error deleting config directory: " << e.what() << std::endl;
+      return false;
+    }
+    std::cout << "Config directory deleted: " << config_path.parent_path()
+              << std::endl;
+    return true;
+  }
+
+  bool addConfigData(std::string url, std::string name) {
+    for (const auto &data : config_datas) {
+      if (data.name == name) {
+        std::cerr << "Config data with name '" << name << "' already exists."
+                  << std::endl;
+        return false;
+      }
+    }
+    ConfigData new_config_data{name, url};
+    config_datas.push_back(new_config_data);
+    nlohmann::json config_json = config_datas;
+    std::ofstream config_file(config_path);
+    if (!config_file.is_open()) {
+      std::cerr << "Failed to open config file for writing: " << config_path
+                << std::endl;
+      return false;
+    }
+    try {
+      config_file << config_json.dump(4);
+    } catch (const nlohmann::json::type_error &e) {
+      std::cerr << "Failed to write to config file: " << e.what() << std::endl;
+      return false;
+    }
+    std::cout << "Config data added successfully." << std::endl;
+    return true;
+  }
+
+  bool removeConfigData(std::string name) {
+    auto it = std::remove_if(
+        config_datas.begin(), config_datas.end(),
+        [&](const ConfigData &data) { return data.name == name; });
+    if (it == config_datas.end()) {
+      std::cerr << "Config data with name '" << name << "' not found."
+                << std::endl;
+      return false;
+    }
+    config_datas.erase(it, config_datas.end());
+    nlohmann::json config_json = config_datas;
+    std::ofstream config_file(config_path);
+    if (!config_file.is_open()) {
+      std::cerr << "Failed to open config file for writing: " << config_path
+                << std::endl;
+      return false;
+    }
+    try {
+      config_file << config_json.dump(4);
+    } catch (const nlohmann::json::type_error &e) {
+      std::cerr << "Failed to write to config file: " << e.what() << std::endl;
+      return false;
+    }
+    std::cout << "Config data removed successfully." << std::endl;
     return true;
   }
 };

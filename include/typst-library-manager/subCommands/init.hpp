@@ -17,7 +17,7 @@ public:
   }
   ~Init() {}
 
-  bool workspaceInit() {
+  bool workspaceInit(bool force_init) {
     for (const auto &config_data : config.config_datas) {
       std::string git_clone_subCommands =
           "git clone " + config_data.url + " " + "\"" + config_data.name + "\"";
@@ -34,7 +34,7 @@ public:
         std::cerr << "Workspace initialization failed." << std::endl;
         return false;
       }
-      bool found_source_file = false;
+      bool found_source_file = force_init;
       for (const auto &entry : std::filesystem::directory_iterator(
                library_directory / config_data.name)) {
         if (entry.is_regular_file()) {

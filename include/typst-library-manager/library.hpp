@@ -24,7 +24,8 @@ public:
   ~Library() {}
 
   std::optional<std::filesystem::path>
-  searchOneOfSourceFilePath(const std::filesystem::path &library_path) {
+  searchOneOfSourceFilePath(const std::filesystem::path &library_path,
+                            const std::string &library_name) {
     std::optional<std::filesystem::path> result;
 
     if (!std::filesystem::exists(library_path) ||
@@ -36,9 +37,20 @@ public:
     for (const auto &entry :
          std::filesystem::directory_iterator(library_path)) {
       if (entry.is_regular_file()) {
+        auto filename = entry.path().stem().string();
+        auto ext = entry.path().extension().string();
+        if ((ext == ".typ" || ext == ".typst") && filename == library_name) {
+          result = entry.path();
+          return result;
+        }
+      }
+    }
+    for (const auto &entry :
+         std::filesystem::directory_iterator(library_path)) {
+      if (entry.is_regular_file()) {
         auto ext = entry.path().extension().string();
         if (ext == ".typ" || ext == ".typst") {
-          result = library_path / entry.path();
+          result = entry.path();
           return result;
         }
       }
@@ -52,7 +64,7 @@ public:
       std::filesystem::path library_path =
           init.library_directory / config_data.name;
       std::optional<std::filesystem::path> source_file_path =
-          searchOneOfSourceFilePath(library_path);
+          searchOneOfSourceFilePath(library_path, config_data.name);
       if (!source_file_path.has_value()) {
         continue;
       }

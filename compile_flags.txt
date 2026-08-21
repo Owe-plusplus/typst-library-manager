@@ -1,1 +1,2 @@
 -Iinclude/typst-library-manager
+-std=c++20

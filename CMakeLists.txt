@@ -6,21 +6,21 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(typst-mgr src/typst-library-manager.cpp)
+add_executable(typst-libm src/typst-library-manager.cpp)
 
-target_include_directories(typst-mgr PRIVATE
+target_include_directories(typst-libm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/typst-library-manager
 )
 
 include(GNUInstallDirs)
 
-install(TARGETS typst-mgr
+install(TARGETS typst-libm
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 set(CPACK_PACKAGE_NAME "typst-library-manager")
-set(CPACK_PACKAGE_VENDOR "omoryuryu")
+set(CPACK_PACKAGE_VENDOR "Owe_plisplus")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Typst library manager CLI tool")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 
