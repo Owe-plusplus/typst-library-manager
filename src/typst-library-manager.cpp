@@ -24,8 +24,9 @@ int main(int argc, char *argv[]) {
   CLI::App app{"Typst Manager"};
   CLI::App *init_subCommands =
       app.add_subcommand("init", "Initialize a new Typst project");
-  init_subCommands->add_flag("-f, --force", force_init,
-                             "Force re-initialization of the workspace");
+  init_subCommands->add_flag(
+      "-f, --force", force_init,
+      "If the library is not included source file, don't delete the library.");
   init_subCommands->callback([&]() {
     if (!init.workspaceInit(force_init)) {
       exit(EXIT_FAILURE);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "library.hpp"
+#include <filesystem>
 #include <optional>
 #include <string>
 namespace subCommands {
@@ -72,9 +73,8 @@ public:
         document_name.ends_with(".typ") || document_name.ends_with(".typst")
             ? ""
             : ".typ";
-    std::filesystem::path document_path = std::filesystem::current_path() /
-                                          floder_name /
-                                          (document_name + ".typ");
+    std::filesystem::path document_path =
+        std::filesystem::current_path() / floder_name / (document_name + ext);
     if (document_path.has_parent_path()) {
       try {
         std::filesystem::create_directories(document_path.parent_path());
@@ -114,7 +114,7 @@ public:
                   << "#show : setup" << "\n";
     document_file.close();
     std::cout << "Project " << project_name << " created successfully at "
-              << document_path << std::endl;
+              << std::filesystem::current_path() << std::endl;
     return true;
   }
 };
