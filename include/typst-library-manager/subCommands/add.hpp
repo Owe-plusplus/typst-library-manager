@@ -13,12 +13,30 @@ public:
   ~Add() {}
 
   bool add_document(std::string file_name,
+                    std::optional<std::string> file_name2,
                     std::optional<std::string> lib_name) {
-    std::string document_name = file_name;
+    std::string document_name = file_name2.value_or(file_name);
     std::string library_name =
         lib_name.value_or(library.library_data[0].config_data.name);
+    std::string ext =
+        document_name.ends_with(".typ") || document_name.ends_with(".typst")
+            ? ""
+            : ".typ";
+    Library::libraryData selected_library;
+    bool library_found = false;
+    for (const auto &lib_data : library.library_data) {
+      if (lib_data.config_data.name == library_name) {
+        selected_library = lib_data;
+        library_found = true;
+        break;
+      }
+    }
+    if (!library_found) {
+      std::cerr << "Error: Library not found: " << library_name << std::endl;
+      return false;
+    }
     std::filesystem::path document_path =
-        std::filesystem::current_path() / (document_name + ".typ");
+        std::filesystem::current_path() / (document_name + ext);
     if (document_path.has_parent_path()) {
       try {
         std::filesystem::create_directories(document_path.parent_path());
@@ -36,19 +54,6 @@ public:
       std::cerr << "Error creating file: " << document_path << std::endl;
       return false;
     }
-    Library::libraryData selected_library;
-    bool library_found = false;
-    for (const auto &lib_data : library.library_data) {
-      if (lib_data.config_data.name == library_name) {
-        selected_library = lib_data;
-        library_found = true;
-        break;
-      }
-    }
-    if (!library_found) {
-      std::cerr << "Error: Library not found: " << library_name << std::endl;
-      selected_library = library.library_data[0];
-    }
     std::filesystem::path relative_library_path =
         std::filesystem::relative(selected_library.source_path,
                                   document_path.parent_path())
@@ -57,7 +62,7 @@ public:
                   << "\n"
                   << "#show : setup" << "\n";
     document_file.close();
-    std::cout << "Document " << file_name << " created successfully at "
+    std::cout << "Document " << document_name << " created successfully at "
               << document_path << std::endl;
     return true;
   }
@@ -73,6 +78,19 @@ public:
         document_name.ends_with(".typ") || document_name.ends_with(".typst")
             ? ""
             : ".typ";
+    Library::libraryData selected_library;
+    bool library_found = false;
+    for (const auto &lib_data : library.library_data) {
+      if (lib_data.config_data.name == library_name) {
+        selected_library = lib_data;
+        library_found = true;
+        break;
+      }
+    }
+    if (!library_found) {
+      std::cerr << "Error: Library not found: " << library_name << std::endl;
+      return false;
+    }
     std::filesystem::path document_path =
         std::filesystem::current_path() / floder_name / (document_name + ext);
     if (document_path.has_parent_path()) {
@@ -92,24 +110,13 @@ public:
       std::cerr << "Error creating file: " << document_path << std::endl;
       return false;
     }
-    Library::libraryData selected_library;
-    bool library_found = false;
-    for (const auto &lib_data : library.library_data) {
-      if (lib_data.config_data.name == library_name) {
-        selected_library = lib_data;
-        library_found = true;
-        break;
-      }
-    }
-    if (!library_found) {
-      std::cerr << "Error: Library not found: " << library_name << std::endl;
-      selected_library = library.library_data[0];
-    }
     std::filesystem::path relative_library_path =
         std::filesystem::relative(selected_library.source_path,
                                   document_path.parent_path())
             .lexically_normal();
-    document_file << "#import \"" << relative_library_path.string() << "\" : *"
+
+    std::string import_path = relative_library_path.generic_string();
+    document_file << "#import \"" << import_path << "\" : *"
                   << "\n"
                   << "#show : setup" << "\n";
     document_file.close();

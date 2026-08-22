@@ -6,16 +6,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(typst-libm src/typst-library-manager.cpp)
+add_executable(tylm src/typst-library-manager.cpp)
 
-target_include_directories(typst-libm PRIVATE
+target_include_directories(tylm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/typst-library-manager
 )
 
 include(GNUInstallDirs)
 
-install(TARGETS typst-libm
+install(TARGETS tylm
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
@@ -24,7 +24,7 @@ install(FILES LICENSE THIRD_PARTY_NOTICES.md
 )
 
 set(CPACK_PACKAGE_NAME "typst-library-manager")
-set(CPACK_PACKAGE_VENDOR "Owe-plisplus")
+set(CPACK_PACKAGE_VENDOR "Owe-plusplus")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Typst library manager CLI tool")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 
@@ -35,7 +35,7 @@ elseif(APPLE)
     set(CPACK_GENERATOR "TGZ;DragNDrop")
 else()
     set(CPACK_GENERATOR "DEB;TGZ") 
-    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "omoryuryu <omoryuryu1@gmail.com>")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Owe-pluplus <omoryuryu1@gmail.com>")
 endif()
 
 include(CPack)

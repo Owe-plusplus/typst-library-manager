@@ -1,5 +1,6 @@
 #pragma once
 #include "json/json.hpp"
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -20,8 +21,14 @@ public:
 
   Config() {
     const char *home_dir = getenv("HOME");
+#ifdef _WIN32
     if (home_dir == nullptr) {
-      std::cerr << "Error: HOME environment variable is not set." << std::endl;
+      home_dir = getenv("USERPROFILE");
+    }
+#endif
+    if (home_dir == nullptr) {
+      std::cerr << "Error: home directory environment variable is not set."
+                << std::endl;
       exit(EXIT_FAILURE);
     }
     std::filesystem::path home_path(home_dir);
@@ -84,27 +91,88 @@ public:
     return true;
   }
 
-  bool deleteConfigFile() {
-    if (!std::filesystem::exists(config_path)) {
-      std::cerr << "Config file does not exist: " << config_path << std::endl;
+  bool resetConfigFile() {
+    if (std::filesystem::exists(config_path)) {
+      try {
+        std::filesystem::remove(config_path);
+      } catch (const std::filesystem::filesystem_error &e) {
+        std::cerr << "Error deleting config file: " << e.what() << std::endl;
+        return false;
+      }
+      std::cout << "Config file deleted: " << config_path << std::endl;
+
+      std::filesystem::path config_dir = config_path.parent_path();
+
+      std::error_code ec;
+      if (!(std::filesystem::exists(config_dir, ec) &&
+            !std::filesystem::is_empty(config_dir, ec))) {
+
+        try {
+          std::filesystem::remove(config_dir);
+        } catch (const std::filesystem::filesystem_error &e) {
+          std::cerr << "Error deleting config directory: " << e.what()
+                    << std::endl;
+          return false;
+        }
+        std::cout << "Config directory deleted: " << config_dir << std::endl;
+      }
+    }
+    return true;
+  }
+
+  bool writeConfigFile() {
+    if (!config_path.has_parent_path()) {
+      std::cerr << "Config file has no parent directory: " << config_path
+                << std::endl;
       return false;
     }
-    try {
-      std::filesystem::remove(config_path);
-    } catch (const std::filesystem::filesystem_error &e) {
-      std::cerr << "Error deleting config file: " << e.what() << std::endl;
-      return false;
-    }
-    std::cout << "Config file deleted: " << config_path << std::endl;
 
     try {
-      std::filesystem::remove(config_path.parent_path());
+      std::filesystem::create_directories(config_path.parent_path());
     } catch (const std::filesystem::filesystem_error &e) {
-      std::cerr << "Error deleting config directory: " << e.what() << std::endl;
+      std::cerr << "Error creating config directory: " << e.what() << std::endl;
       return false;
     }
-    std::cout << "Config directory deleted: " << config_path.parent_path()
-              << std::endl;
+
+    std::filesystem::path temp_path =
+        config_path.parent_path() / ".config.json.tmp";
+    try {
+      std::ofstream config_file(temp_path, std::ios::binary | std::ios::trunc);
+      if (!config_file.is_open()) {
+        std::cerr << "Failed to open temporary config file: " << temp_path
+                  << std::endl;
+        return false;
+      }
+
+      config_file << nlohmann::json(config_datas).dump(4);
+      config_file.flush();
+      if (!config_file) {
+        std::cerr << "Failed to write config file: " << temp_path << std::endl;
+        config_file.close();
+        std::filesystem::remove(temp_path);
+        return false;
+      }
+      config_file.close();
+
+      std::error_code ec;
+      if (std::filesystem::exists(config_path, ec)) {
+        std::filesystem::remove(config_path, ec);
+      }
+
+      std::filesystem::rename(temp_path, config_path, ec);
+      if (ec) {
+        std::cerr << "Failed to replace config file: " << ec.message()
+                  << std::endl;
+        std::filesystem::remove(temp_path);
+        return false;
+      }
+    } catch (const std::exception &e) {
+      std::cerr << "Failed to write config file atomically: " << e.what()
+                << std::endl;
+      std::filesystem::remove(temp_path);
+      return false;
+    }
+
     return true;
   }
 
@@ -118,17 +186,7 @@ public:
     }
     ConfigData new_config_data{name, url};
     config_datas.push_back(new_config_data);
-    nlohmann::json config_json = config_datas;
-    std::ofstream config_file(config_path);
-    if (!config_file.is_open()) {
-      std::cerr << "Failed to open config file for writing: " << config_path
-                << std::endl;
-      return false;
-    }
-    try {
-      config_file << config_json.dump(4);
-    } catch (const nlohmann::json::type_error &e) {
-      std::cerr << "Failed to write to config file: " << e.what() << std::endl;
+    if (!writeConfigFile()) {
       return false;
     }
     std::cout << "Config data added successfully." << std::endl;
@@ -145,17 +203,7 @@ public:
       return false;
     }
     config_datas.erase(it, config_datas.end());
-    nlohmann::json config_json = config_datas;
-    std::ofstream config_file(config_path);
-    if (!config_file.is_open()) {
-      std::cerr << "Failed to open config file for writing: " << config_path
-                << std::endl;
-      return false;
-    }
-    try {
-      config_file << config_json.dump(4);
-    } catch (const nlohmann::json::type_error &e) {
-      std::cerr << "Failed to write to config file: " << e.what() << std::endl;
+    if (!writeConfigFile()) {
       return false;
     }
     std::cout << "Config data removed successfully." << std::endl;

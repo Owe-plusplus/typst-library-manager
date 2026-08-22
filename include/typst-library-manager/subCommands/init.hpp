@@ -19,17 +19,15 @@ public:
 
   bool workspaceInit(bool force_init) {
     for (const auto &config_data : config.config_datas) {
-      std::string git_clone_subCommands =
-          "git clone " + config_data.url + " " + "\"" + config_data.name + "\"";
       if (std::filesystem::exists(library_directory / config_data.name)) {
         std::cout << "Directory " << library_directory / config_data.name
                   << " already exists. Skipping clone." << std::endl;
         continue;
       }
-      if (!running.runCommand(git_clone_subCommands, library_directory,
-                              "Cloning " + config_data.name + "...",
-                              "Cloned " + config_data.name +
-                                  " successfully.")) {
+      if (!running.runGitClone(
+              config_data.url, config_data.name, library_directory,
+              "Cloning " + config_data.name + "...",
+              "Cloned " + config_data.name + " successfully.")) {
         std::cerr << "Failed to clone " << config_data.name << std::endl;
         std::cerr << "Workspace initialization failed." << std::endl;
         return false;
@@ -48,16 +46,8 @@ public:
       if (!found_source_file) {
         std::cerr << "No source file found in "
                   << library_directory / config_data.name << std::endl;
-        try {
-          if (std::filesystem::exists(library_directory / config_data.name)) {
-            std::filesystem::remove_all(library_directory / config_data.name);
-            std::cout << "Successfully deleted directory: " << config_data.name
-                      << std::endl;
-          }
-        } catch (const std::filesystem::filesystem_error &e) {
-          std::cerr << "Failed to delete directory '" << config_data.name
-                    << "': " << e.what() << std::endl;
-        }
+        std::cerr << "Workspace initialization failed." << std::endl;
+        return false;
       }
     }
     std::cout << "Workspace initialized successfully." << std::endl;

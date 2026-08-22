@@ -5,29 +5,24 @@
 #include "subCommands/init.hpp"
 #include <optional>
 #include <string>
-#include <unistd.h>
 
 int main(int argc, char *argv[]) {
-  subCommands::Config config = subCommands::Config();
-  if (!config.createConfigFile() || !config.readConfigFile()) {
-    exit(EXIT_FAILURE);
-  }
-  std::vector<subCommands::Config::ConfigData> config_datas;
-  config_datas = config.config_datas;
-  subCommands::Init init = subCommands::Init(config);
-
-  Library library = Library(config, init);
-
-  subCommands::Add add = subCommands::Add(library);
 
   bool force_init = false;
   CLI::App app{"Typst Manager"};
   CLI::App *init_subCommands =
       app.add_subcommand("init", "Initialize a new Typst project");
-  init_subCommands->add_flag(
-      "-f, --force", force_init,
-      "If the library is not included source file, don't delete the library.");
+  init_subCommands->add_flag("-f, --force", force_init,
+                             "If the library is not included source file, "
+                             "continue cloning repositories.");
   init_subCommands->callback([&]() {
+    subCommands::Config config = subCommands::Config();
+    if (!config.createConfigFile() || !config.readConfigFile()) {
+      exit(EXIT_FAILURE);
+    }
+
+    subCommands::Init init = subCommands::Init(config);
+
     if (!init.workspaceInit(force_init)) {
       exit(EXIT_FAILURE);
     }
@@ -49,20 +44,32 @@ int main(int argc, char *argv[]) {
   add_subCommands->add_flag("-d, --doc", create_doc_only,
                             "Create only new typst document");
   add_subCommands->callback([&]() {
+    subCommands::Config config = subCommands::Config();
+    if (!config.createConfigFile() || !config.readConfigFile()) {
+      exit(EXIT_FAILURE);
+    }
+
+    subCommands::Init init = subCommands::Init(config);
+    Library library = Library(config, init);
+
+    subCommands::Add add = subCommands::Add(library);
     if (!library.checkLibraryInitialization()) {
       exit(EXIT_FAILURE);
     }
+
     if (!create_doc_only) {
       add.add_project(project_name, file_name, lib_name);
     } else {
-      add.add_document(project_name, lib_name);
+      add.add_document(project_name, file_name, lib_name);
     }
   });
 
   CLI::App *reset_subcommand =
       app.add_subcommand("reset", "Reset a library configuration");
   reset_subcommand->callback([&]() {
-    if (!config.deleteConfigFile()) {
+    subCommands::Config config = subCommands::Config();
+
+    if (!config.resetConfigFile()) {
       exit(EXIT_FAILURE);
     }
   });
@@ -80,6 +87,11 @@ int main(int argc, char *argv[]) {
       ->add_option("-n,--name", config_name, "Name of the library to add")
       ->required();
   config_add_subcommand->callback([&]() {
+    subCommands::Config config = subCommands::Config();
+    if (!config.createConfigFile() || !config.readConfigFile()) {
+      exit(EXIT_FAILURE);
+    };
+
     if (!config.addConfigData(config_url, config_name)) {
       exit(EXIT_FAILURE);
     }
@@ -91,6 +103,11 @@ int main(int argc, char *argv[]) {
       ->add_option("-n,--name", config_name, "Name of the library to remove")
       ->required();
   config_remove_subcommand->callback([&]() {
+    subCommands::Config config = subCommands::Config();
+    if (!config.createConfigFile() || !config.readConfigFile()) {
+      exit(EXIT_FAILURE);
+    };
+
     if (!config.removeConfigData(config_name)) {
       exit(EXIT_FAILURE);
     }

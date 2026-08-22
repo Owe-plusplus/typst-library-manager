@@ -2,7 +2,7 @@
 
 [English README](readme.md)
 
-`typst-libm` は、Git リポジトリで管理している Typst ライブラリをローカルに取得し、そのライブラリを import する新しい Typst 文書／プロジェクトを作成するコマンドラインツールです。
+`tylm` は、Git リポジトリで管理している Typst ライブラリをローカルに取得し、そのライブラリを import する新しい Typst 文書／プロジェクトを作成するコマンドラインツールです。
 
 ## 必要なもの
 
@@ -19,13 +19,20 @@ cmake --build build
 cmake --install build --prefix ~/.local
 ```
 
-`~/.local/bin` が `PATH` に含まれていない環境では、追加してから `typst-libm` を実行してください。
+`~/.local/bin` が `PATH` に含まれていない環境では、追加してから `tylm` を実行してください。
 
 インストールせずに試す場合は、生成された実行ファイルを直接使えます。
 
 ```sh
-./build/typst-libm --help
+./build/tylm --help
 ```
+
+## ダウンロード
+
+ビルド済みの Linux 向けパッケージは [GitHub Releases](https://github.com/Owe-plusplus/typst-library-manager/releases) から入手できます。使用するディストリビューション向けのパッケージをダウンロードすれば、CMake や C++ コンパイラは不要です。
+
+- `.deb`: Debian / Ubuntu 系ディストリビューション向け
+- `.tar.gz`: それ以外の Linux ディストリビューション向け
 
 ## 使い方
 
@@ -55,10 +62,10 @@ my-library/
 
 ### 1. ライブラリを登録する
 
-登録情報は `~/.typst_library_manager/config.json` に保存されます。ファイルや親ディレクトリが存在しない場合は、`typst-libm` の実行時に空の設定ファイル（`[]`）として自動生成されます。`name` はローカルのディレクトリ名と、ライブラリ内で優先的に探すエントリーファイル名に使われます。
+登録情報は `~/.typst_library_manager/config.json` に保存されます。ファイルや親ディレクトリが存在しない場合は、`tylm` の実行時に空の設定ファイル（`[]`）として自動生成されます。`name` はローカルのディレクトリ名と、ライブラリ内で優先的に探すエントリーファイル名に使われます。
 
 ```sh
-typst-libm config add \
+tylm config add \
   --name my-library \
   --url https://github.com/example/my-library.git
 ```
@@ -79,7 +86,7 @@ typst-libm config add \
 登録を削除するには、次を実行します。
 
 ```sh
-typst-libm config remove --name my-library
+tylm config remove --name my-library
 ```
 
 ### 2. 作業ディレクトリでライブラリを取得する
@@ -88,13 +95,13 @@ Typst プロジェクトを置きたいディレクトリで実行してくだ�
 
 ```sh
 cd path/to/your-typst-workspace
-typst-libm init
+tylm init
 ```
 
-`init` は、取得したリポジトリの直下に `.typ` または `.typst` ファイルがあることを確認します。見つからないリポジトリは削除されます。意図的にそのようなリポジトリを保持したい場合は `--force` を付けます。
+`init` は、取得したリポジトリの直下に `.typ` または `.typst` ファイルがあることを確認します。見つからない場合はエラーで停止します。意図的にそのようなリポジトリを保持したい場合は `--force` を付けて、検証をスキップしてください。
 
 ```sh
-typst-libm init --force
+tylm init --force
 ```
 
 ### 3. プロジェクトを作る
@@ -102,7 +109,7 @@ typst-libm init --force
 以下は `report/main.typ` を作成します。`--library` を省略すると、初期化済みライブラリの先頭が使われます。
 
 ```sh
-typst-libm add report --docname main --library my-library
+tylm add report --docname main --library my-library
 ```
 
 生成されるファイルには、選択したライブラリのソースファイルへの相対 import と `#show : setup` が書き込まれます。
@@ -115,7 +122,7 @@ typst-libm add report --docname main --library my-library
 `--doc` を指定すると、プロジェクト用ディレクトリを作らず、カレントディレクトリに単一文書を作成します。
 
 ```sh
-typst-libm add handout --doc --library my-library
+tylm add handout --doc --library my-library
 ```
 
 この例では `handout.typ` が作られます。単一文書モードでは `--docname` は使用されません。
@@ -124,22 +131,24 @@ typst-libm add handout --doc --library my-library
 
 短縮形と長い形式は同じ意味です。
 
-| コマンド                       | 短縮形    | 長い形式         | 内容                                               |
-| ------------------------------ | --------- | ---------------- | -------------------------------------------------- |
-| `init`                         | `-f`      | `--force`        | ソースファイルがないライブラリも削除せずに保持する |
-| `add`                          | `-n TEXT` | `--docname TEXT` | プロジェクト内に作る文書名を指定する               |
-| `add`                          | `-l TEXT` | `--library TEXT` | 使用するライブラリを指定する                       |
-| `add`                          | `-d`      | `--doc`          | プロジェクトを作らず、単一文書を作る               |
-| `config add`                   | `-u TEXT` | `--url TEXT`     | ライブラリの Git URL を指定する                    |
-| `config add` / `config remove` | `-n TEXT` | `--name TEXT`    | ライブラリ名を指定する                             |
+| コマンド                       | 短縮形    | 長い形式         | 内容                                       |
+| ------------------------------ | --------- | ---------------- | ------------------------------------------ |
+| `init`                         | `-f`      | `--force`        | ソースファイルの検証をスキップして続行する |
+| `add`                          | `-n TEXT` | `--docname TEXT` | プロジェクト内に作る文書名を指定する       |
+| `add`                          | `-l TEXT` | `--library TEXT` | 使用するライブラリを指定する               |
+| `add`                          | `-d`      | `--doc`          | プロジェクトを作らず、単一文書を作る       |
+| `config add`                   | `-u TEXT` | `--url TEXT`     | ライブラリの Git URL を指定する            |
+| `config add` / `config remove` | `-n TEXT` | `--name TEXT`    | ライブラリ名を指定する                     |
 
 ### 設定を初期化する
 
-`reset` は `~/.typst_library_manager/config.json` とその設定ディレクトリを削除します。取得済みの `libraries/` ディレクトリは削除しません。
+`reset` は `~/.typst_library_manager/config.json` が存在すれば削除します。その後、設定ディレクトリが空になった場合のみディレクトリ自体も削除します。もしディレクトリにほかのファイルが残っている場合は、安全のため削除せずにそのまま残します。取得済みの `libraries/` ディレクトリは削除しません。
 
 ```sh
-typst-libm reset
+tylm reset
 ```
+
+このコマンドは冪等に設計されています。設定がすでに存在しないときに再度実行しても、失敗ではなく何もしない状態として扱います。
 
 ## 注意点
 

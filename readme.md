@@ -2,7 +2,7 @@
 
 [日本語版 README](readme_ja.md)
 
-`typst-libm` is a command-line tool that checks out Typst libraries managed in Git repositories and creates new Typst documents or projects that import them.
+`tylm` is a command-line tool that checks out Typst libraries managed in Git repositories and creates new Typst documents or projects that import them.
 
 ## Requirements
 
@@ -19,13 +19,20 @@ cmake --build build
 cmake --install build --prefix ~/.local
 ```
 
-If `~/.local/bin` is not in your `PATH`, add it before running `typst-libm`.
+If `~/.local/bin` is not in your `PATH`, add it before running `tylm`.
 
 To try the program without installing it, run the executable produced by the build directly:
 
 ```sh
-./build/typst-libm --help
+./build/tylm --help
 ```
+
+## Download
+
+Prebuilt Linux packages are available from the [GitHub Releases page](https://github.com/Owe-plusplus/typst-library-manager/releases). Download the package for your distribution; CMake and a C++ compiler are not required to use it.
+
+- `.deb`: Debian and Ubuntu-based distributions
+- `.tar.gz`: other Linux distributions
 
 ## Usage
 
@@ -55,10 +62,10 @@ If there is no file whose name matches the library name, the first `.typ` or `.t
 
 ### 1. Register a library
 
-Library registrations are stored in `~/.typst_library_manager/config.json`. When this file or its parent directory does not exist, running `typst-libm` creates an empty configuration file (`[]`). The `name` is used as the local directory name and as the preferred entry filename within the library.
+Library registrations are stored in `~/.typst_library_manager/config.json`. When this file or its parent directory does not exist, running `tylm` creates an empty configuration file (`[]`). The `name` is used as the local directory name and as the preferred entry filename within the library.
 
 ```sh
-typst-libm config add \
+tylm config add \
   --name my-library \
   --url https://github.com/example/my-library.git
 ```
@@ -79,7 +86,7 @@ To register multiple libraries, append objects in the same form to the array. Do
 To remove a registration, run:
 
 ```sh
-typst-libm config remove --name my-library
+tylm config remove --name my-library
 ```
 
 ### 2. Fetch libraries in your workspace
@@ -88,13 +95,13 @@ Run this command in the directory where you want to keep Typst projects. Each re
 
 ```sh
 cd path/to/your-typst-workspace
-typst-libm init
+tylm init
 ```
 
-`init` checks whether the cloned repository has a `.typ` or `.typst` file at its root. Repositories without one are deleted. Use `--force` to preserve such repositories intentionally.
+`init` checks whether the cloned repository has a `.typ` or `.typst` file at its root. If a repository does not have a valid entry file, the command stops and reports an error. Use `--force` to skip that validation and keep the repository as-is.
 
 ```sh
-typst-libm init --force
+tylm init --force
 ```
 
 ### 3. Create a project
@@ -102,7 +109,7 @@ typst-libm init --force
 The following creates `report/main.typ`. If `--library` is omitted, the first initialized library is used.
 
 ```sh
-typst-libm add report --docname main --library my-library
+tylm add report --docname main --library my-library
 ```
 
 The generated file contains a relative import of the selected library source file and `#show : setup`.
@@ -115,7 +122,7 @@ The generated file contains a relative import of the selected library source fil
 Use `--doc` to create a single document in the current directory without creating a project directory.
 
 ```sh
-typst-libm add handout --doc --library my-library
+tylm add handout --doc --library my-library
 ```
 
 This example creates `handout.typ`. In single-document mode, `--docname` is not used.
@@ -124,22 +131,24 @@ This example creates `handout.typ`. In single-document mode, `--docname` is not 
 
 Short and long forms have the same meaning.
 
-| Command                        | Short form | Long form        | Description                                          |
-| ------------------------------ | ---------- | ---------------- | ---------------------------------------------------- |
-| `init`                         | `-f`       | `--force`        | Preserve libraries even when no source file is found |
-| `add`                          | `-n TEXT`  | `--docname TEXT` | Set the document name to create inside a project     |
-| `add`                          | `-l TEXT`  | `--library TEXT` | Select the library to use                            |
-| `add`                          | `-d`       | `--doc`          | Create a single document rather than a project       |
-| `config add`                   | `-u TEXT`  | `--url TEXT`     | Set the library Git URL                              |
-| `config add` / `config remove` | `-n TEXT`  | `--name TEXT`    | Set the library name                                 |
+| Command                        | Short form | Long form        | Description                                      |
+| ------------------------------ | ---------- | ---------------- | ------------------------------------------------ |
+| `init`                         | `-f`       | `--force`        | Skip the source-file validation and continue     |
+| `add`                          | `-n TEXT`  | `--docname TEXT` | Set the document name to create inside a project |
+| `add`                          | `-l TEXT`  | `--library TEXT` | Select the library to use                        |
+| `add`                          | `-d`       | `--doc`          | Create a single document rather than a project   |
+| `config add`                   | `-u TEXT`  | `--url TEXT`     | Set the library Git URL                          |
+| `config add` / `config remove` | `-n TEXT`  | `--name TEXT`    | Set the library name                             |
 
 ### Reset configuration
 
-`reset` deletes `~/.typst_library_manager/config.json` and its configuration directory. It does not delete fetched `libraries/` directories.
+`reset` removes `~/.typst_library_manager/config.json` if it exists. If the configuration directory is empty after that, it is also removed. If the directory still contains other files, it is left intact for safety. It does not delete fetched `libraries/` directories.
 
 ```sh
-typst-libm reset
+tylm reset
 ```
+
+This command is intentionally idempotent: running it again when the config is already absent is treated as a no-op rather than a failure.
 
 ## Notes
 

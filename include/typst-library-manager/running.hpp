@@ -1,14 +1,17 @@
 #pragma once
+#include <cerrno>
+#include <chrono>
+#include <cstring>
+#include <fcntl.h>
 #include <filesystem>
 #include <future>
 #include <iostream>
 #include <string>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <vector>
 
 class Running {
-
-  std::filesystem::path current_path;
-
   void showSpinner(const std::future<int> &future,
                    const std::string &loading_message) {
     const std::vector<std::string> spinner = {"⠋", "⠙", "⠹", "⠸", "⠼",
@@ -24,65 +27,73 @@ class Running {
   }
 
 public:
-  Running() { current_path = std::filesystem::current_path(); }
+  Running() = default;
 
-  ~Running() {}
+  ~Running() = default;
 
-  bool runCommand(const std::string &command, const std::string &path_dir,
-                  const std::string &loading_message,
-                  const std::string &complete_message) {
+  bool runGitClone(const std::string &url, const std::string &directory_name,
+                   const std::filesystem::path &working_directory,
+                   const std::string &loading_message,
+                   const std::string &complete_message) {
+    std::filesystem::path target_path(directory_name);
+    if (directory_name.empty() || target_path.filename() != target_path ||
+        directory_name == "." || directory_name == "..") {
+      std::cerr << "Invalid library directory name: " << directory_name
+                << std::endl;
+      return false;
+    }
 
     try {
-      if (!std::filesystem::exists(path_dir)) {
-        std::filesystem::create_directories(path_dir);
+      if (!std::filesystem::exists(working_directory)) {
+        std::filesystem::create_directories(working_directory);
       }
     } catch (const std::filesystem::filesystem_error &e) {
       std::cerr << "Error creating directory: " << e.what() << std::endl;
       return false;
     }
 
-    try {
-      std::filesystem::current_path(path_dir);
-    } catch (const std::filesystem::filesystem_error &e) {
-      std::cerr << "Error changing directory: " << e.what() << std::endl;
+    pid_t pid = fork();
+    if (pid < 0) {
+      std::cerr << "Error starting git: " << std::strerror(errno) << std::endl;
       return false;
     }
 
-    auto future = std::async(std::launch::async, [command]() {
-#ifdef _WIN32
-      std::string quiet_command = command + " > nul 2>&1";
-#else
-      std::string quiet_command = command + " > /dev/null 2>&1";
-#endif
-      return system(quiet_command.c_str());
+    if (pid == 0) {
+      if (chdir(working_directory.c_str()) != 0) {
+        _exit(127);
+      }
+
+      int null_fd = open("/dev/null", O_WRONLY);
+      if (null_fd >= 0) {
+        dup2(null_fd, STDOUT_FILENO);
+        dup2(null_fd, STDERR_FILENO);
+        close(null_fd);
+      }
+
+      execlp("git", "git", "clone", "--", url.c_str(),
+             directory_name.c_str(), static_cast<char *>(nullptr));
+      _exit(127);
+    }
+
+    auto future = std::async(std::launch::async, [pid]() {
+      int status = 0;
+      return waitpid(pid, &status, 0) == pid ? status : -1;
     });
 
     showSpinner(future, loading_message);
 
-    int result = future.get();
+    int status = future.get();
 
-    if (result == 0) {
+    if (status != -1 && WIFEXITED(status) && WEXITSTATUS(status) == 0) {
       std::cout << "\r\033[K" << complete_message << std::endl;
-
-      try {
-        std::filesystem::current_path(current_path);
-      } catch (const std::filesystem::filesystem_error &e) {
-        std::cerr << "Error changing directory back: " << e.what() << std::endl;
-        return false;
-      }
-
       return true;
-    } else {
-      std::cerr << "\r\033[KError: Command failed with exit code " << result
-                << std::endl;
-
-      try {
-        std::filesystem::current_path(current_path);
-      } catch (const std::filesystem::filesystem_error &e) {
-        std::cerr << "Error changing directory back: " << e.what() << std::endl;
-        return false;
-      }
-      return false;
     }
+
+    std::cerr << "\r\033[KError: git clone failed";
+    if (status != -1 && WIFEXITED(status)) {
+      std::cerr << " with exit code " << WEXITSTATUS(status);
+    }
+    std::cerr << std::endl;
+    return false;
   }
 };
