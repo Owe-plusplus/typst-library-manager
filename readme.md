@@ -60,6 +60,21 @@ This example automatically applies page and text settings to documents that use 
 
 If there is no file whose name matches the library name, the first `.typ` or `.typst` file at the repository root is used instead. To make the selected entry file unambiguous, using a filename that matches the library name is recommended.
 
+> [!WARNING]
+> In Typst, string paths used inside library functions are resolved from the library file.
+> To let callers pass paths relative to their own document, accept a `path` value and call the function with `path("...")`.
+
+```typst
+// my-library.typ
+#let logo(src) = image(src, width: 40mm)
+
+// report/main.typ
+#import "../libraries/my-library/my-library.typ" : *
+#logo(path("assets/logo.png"))
+```
+
+> Here, `assets/logo.png` is resolved from `report/main.typ`, not from `my-library.typ`.
+
 ### 1. Register a library
 
 Library registrations are stored in `~/.typst_library_manager/config.json`. When this file or its parent directory does not exist, running `tylm` creates an empty configuration file (`[]`). The `name` is used as the local directory name and as the preferred entry filename within the library.

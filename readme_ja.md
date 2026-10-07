@@ -60,6 +60,21 @@ my-library/
 
 ライブラリ名と一致するファイルがない場合でも、リポジトリ直下の最初の `.typ`／`.typst` ファイルは利用できます。ただし、どのファイルが選ばれるかを明確にするため、ライブラリ名と同じエントリーファイルを置くことを推奨します。
 
+> [!WARNING]
+> Typst では、ライブラリ関数内で使う文字列パスはライブラリファイル基準で解決されます。
+> 呼び出し元の文書基準でパスを渡したい場合は、ライブラリ側で `path` 値を受け取り、呼び出し側で `path("...")` を渡してください。
+
+```typst
+// my-library.typ
+#let logo(src) = image(src, width: 40mm)
+
+// report/main.typ
+#import "../libraries/my-library/my-library.typ" : *
+#logo(path("assets/logo.png"))
+```
+
+> この例では、`assets/logo.png` は `my-library.typ` ではなく `report/main.typ` からの相対パスとして解決されます。
+
 ### 1. ライブラリを登録する
 
 登録情報は `~/.typst_library_manager/config.json` に保存されます。ファイルや親ディレクトリが存在しない場合は、`tylm` の実行時に空の設定ファイル（`[]`）として自動生成されます。`name` はローカルのディレクトリ名と、ライブラリ内で優先的に探すエントリーファイル名に使われます。
